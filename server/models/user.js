@@ -58,6 +58,18 @@ UserSchema.methods.generateAuthToken = function(){
     })
 }
 
+// 2... remove token LogOut
+UserSchema.methods.removeToken =function(token){
+    let user =this;
+   return  user.updateOne({
+        $pull:{
+            tokens:{
+                token:token
+            }
+        }
+    })
+}
+
 // MODEL methods statics will convert this method to model method
 
 // 1.... to authenticate
