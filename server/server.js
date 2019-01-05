@@ -8,7 +8,7 @@ const _     = require('lodash');
 const {mongoose} = require('./DB/connect')
 const {Todo} =require('./models/todo')
 const {User} =require('./models/user')
-
+const {authenticate} =require('./middleware/authenticate')
 const port = process.env.PORT || 3000;
 const app =express();
 app.use(bodyParser.json())
@@ -106,6 +106,10 @@ app.post('/users',(req,res)=>{
     })
 })
 
+
+app.get('/users/me' ,authenticate,(req,res)=>{
+        return res.send(req.user)
+})
 
 app.listen(3000,()=>{
     console.log(`Listening on port ${port} `);
