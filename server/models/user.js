@@ -2,6 +2,7 @@ const mongoose =require('mongoose')
 const validator =require('validator')
 const jwt =require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt =require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
     email:{
@@ -35,13 +36,14 @@ const UserSchema = new mongoose.Schema({
         }
     }]
 })
-// instnace methods
+// INSTANCE methods
 UserSchema.methods.toJSON =function(){
     let user = this
     let userObject= user.toObject()
     return _.pick(userObject,['_id','email']);
 }
 
+    //    1.. generating token after signup
 UserSchema.methods.generateAuthToken = function(){
     let user = this
     let access = 'auth'
@@ -56,7 +58,9 @@ UserSchema.methods.generateAuthToken = function(){
     })
 }
 
-// model method statics will convert this method to model method
+// MODEL methods statics will convert this method to model method
+
+// 1.... to authenticate
 UserSchema.statics.findByToken = function(token){
     let User =this;
     let decoded;
@@ -74,6 +78,44 @@ UserSchema.statics.findByToken = function(token){
         'tokens.access':'auth'
     })
 }
+
+// 2... for logginin
+UserSchema.statics.findByCredentials = function(email, password){
+        let User =this;
+
+       return User.findOne({email}).then((user)=>{
+            if(!user){
+                return Promise.reject() 
+            }
+            return new Promise((resolve,reject)=>{
+                bcrypt.compare(password,user.password,(err,res)=>{
+                    if(res){
+                         resolve(user);
+                    }else{
+                        reject(err)
+                    }                        
+                })
+            })
+        })
+}
+
+
+
+// HASHING BEFORE SAVING PASSWORD
+UserSchema.pre('save',function(next){
+    let user = this;
+    if(user.isModified('password')){
+        bcrypt.genSalt(10,(err ,salt)=>{
+            bcrypt.hash(user.password ,salt, (err,hash)=>{
+               user.password =hash   
+               next();   
+            })
+        })
+        
+    }else{
+        next();
+    }
+})
 
 let User =mongoose.model('User',UserSchema)
 
